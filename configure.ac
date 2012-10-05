@@ -15,14 +15,30 @@ AC_PROG_CC
 AC_HEADER_STDC
 
 # GLFW
-PKG_CHECK_MODULES([LIBGLFW], [glfw >= 2.7.4])
+PKG_CHECK_MODULES([LIBGLFW], [libglfw >= 2.7.4])
 if test "x${have_glfw}" = "xfalse" ; then
     AC_MSG_ERROR([Missing glfw])
 fi
 
+# OpenCV
+PKG_CHECK_MODULES([OPENCV], [opencv >= 2.3])
+if test "x${have_opencv}" = "xfalse" ; then
+    AC_MSG_ERROR([Missing opencv])
+fi
+
+# OpenGL
+PKG_CHECK_MODULES([GL], [gl >= 2.3])
+if test "x${have_gl}" = "xfalse" ; then
+    AC_MSG_ERROR([Missing opengl])
+fi
+
+BOOST_REQUIRE([1.48])
+BOOST_SYSTEM
+BOOST_FILESYSTEM
+BOOST_CHRONO
+
 AC_CONFIG_FILES([
     Makefile
     src/Makefile
-    man/Makefile
     ])
 AC_OUTPUT

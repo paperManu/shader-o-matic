@@ -162,7 +162,8 @@ void shaderomatic::prepareTexture()
 {
     // Préparation des textures du fond et du HUD
     glGenTextures(2, mTexture);
-    loadTexture("../Resources/texture.png", mTexture[0]);
+    if(!loadTexture("texture.png", mTexture[0]))
+        exit(EXIT_FAILURE);
 
     prepareHUDTexture();
 }
@@ -206,7 +207,7 @@ bool shaderomatic::compileShader()
 
     // Vertex shader
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    lSrc = readFile("./vertex.vert");
+    lSrc = readFile("vertex.vert");
     glShaderSource(mVertexShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mVertexShader);
     lResult = verifyShader(mVertexShader);
@@ -218,7 +219,7 @@ bool shaderomatic::compileShader()
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    lSrc = readFile("./fragment.frag");
+    lSrc = readFile("fragment.frag");
     glShaderSource(mFragmentShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mFragmentShader);
     lResult = verifyShader(mFragmentShader);
@@ -526,9 +527,9 @@ bool shaderomatic::shaderChanged()
     bool lResult = false;
     std::time_t lTime;
 
-    if(boost::filesystem3::exists("../Resources/vertex.vert"))
+    if(boost::filesystem3::exists("vertex.vert"))
     {
-        lTime = boost::filesystem3::last_write_time("../Resources/vertex.vert");
+        lTime = boost::filesystem3::last_write_time("vertex.vert");
         if(lTime != mVertexChange)
         {
             mVertexChange = lTime;
@@ -541,9 +542,9 @@ bool shaderomatic::shaderChanged()
         return false;
     }
 
-    if(boost::filesystem3::exists("../Resources/fragment.frag"))
+    if(boost::filesystem3::exists("fragment.frag"))
     {
-        lTime = boost::filesystem3::last_write_time("../Resources/fragment.frag");
+        lTime = boost::filesystem3::last_write_time("fragment.frag");
         if(lTime != mFragmentChange)
         {
             mFragmentChange = lTime;
