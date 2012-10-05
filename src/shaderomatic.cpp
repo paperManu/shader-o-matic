@@ -7,6 +7,47 @@
 
 using namespace boost::chrono;
 
+char gDefaultVertShader[] =
+    "#version 150 core\n"
+    "\n"
+    "in vec4 vVertex;\n"
+    "in vec2 vTexCoord;\n"
+    "\n"
+    "uniform mat4 vMVP;\n"
+    "uniform vec2 vMouse;\n"
+    "\n"
+    "smooth out vec2 finalTexCoord;\n"
+    "\n"
+    "void main(void)\n"
+    "{\n"
+    "    gl_Position.xyz = (vMVP*vVertex).xyz;\n"
+    "\n"
+    "    finalTexCoord = vTexCoord;\n"
+    "}\n";
+
+char gDefaultFragShader[] =
+    "#version 150 core\n"
+    "\n"
+    "uniform sampler2D vTexMap;\n"
+    "uniform sampler2D vHUDMap;\n"
+    "uniform sampler2D vFBOMap;\n"
+    "\n"
+    "uniform vec2 vMouse;\n"
+    "uniform float vTimer;\n"
+    "uniform vec2 vResolution;\n"
+    "uniform int vPass;\n"
+    "\n"
+    "in vec2 finalTexCoord;\n"
+    "\n"
+    "out vec4 fragColor;\n"
+    "\n"
+    "void main(void)\n"
+    "{\n"
+    "    float lHUDScale = vResolution.y/32.f;\n"
+    "    fragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+    "    fragColor += texture(vHUDMap, vec2(finalTexCoord.s, finalTexCoord.t*lHUDScale));\n"
+    "}\n";
+
 /********************************/
 shaderomatic::shaderomatic()
     :mIsRunning(false),
@@ -44,11 +85,6 @@ void shaderomatic::init()
 
     // On récupère les heures de modifs des shaders
     shaderChanged();
-    if(mVertexChange == 0 || mFragmentChange == 0)
-    {
-        cerr << "Missing shader file, exiting." << endl;
-        exit(EXIT_FAILURE);
-    }
 
     // Préparation de la géométrie (un plan ...) et de la texture
     prepareGeometry();
@@ -208,6 +244,13 @@ bool shaderomatic::compileShader()
     // Vertex shader
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
     lSrc = readFile("vertex.vert");
+    bool isPresent = true;
+    if(lSrc == NULL)
+    {
+        lSrc = gDefaultVertShader;
+        isPresent = false;
+    }
+
     glShaderSource(mVertexShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mVertexShader);
     lResult = verifyShader(mVertexShader);
@@ -215,11 +258,20 @@ bool shaderomatic::compileShader()
     {
         return false;
     }
-    free(lSrc);
+
+    if(isPresent)
+        free(lSrc);
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     lSrc = readFile("fragment.frag");
+    isPresent = true;
+    if(lSrc == NULL)
+    {
+        lSrc = gDefaultFragShader;
+        isPresent = false;
+    }
+
     glShaderSource(mFragmentShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mFragmentShader);
     lResult = verifyShader(mFragmentShader);
@@ -227,7 +279,9 @@ bool shaderomatic::compileShader()
     {
         return false;
     }
-    free(lSrc);
+
+    if(isPresent)
+        free(lSrc);
 
     // Création du programme
     mShaderProgram = glCreateProgram();
@@ -285,7 +339,7 @@ void shaderomatic::draw()
     {
         // Rendu du HUD
         string lHUDText = string("Fps: ") + boost::lexical_cast<string>((int)(1.f/mTimePerFrame));
-        lHUDText += string(" (") + boost::lexical_cast<string>(mTimePerFrame) + string(" sec per frame)");
+        lHUDText += string(" (") + boost::lexical_cast<string>(mTimePerFrame*1000) + string(" msec per frame)");
 
         mHUD = cv::Mat::zeros(mHUD.size(), mHUD.type());
         cv::putText(mHUD, lHUDText, cv::Point(0,28), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
@@ -368,7 +422,7 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
     {
         cerr << "Failed to load texture." << endl;
         cerr << "Using a black texture instead." << endl;
-        lMatTexture = cv::Mat::zeros(640, 480, CV_8UC3);
+        lMatTexture = cv::Mat::zeros(600, 800, CV_8UC3);
     }
 
     cv::flip(lMatTexture, lBufferTexture, 0);
@@ -439,8 +493,7 @@ char* shaderomatic::readFile(const char* pFile)
     if(!lFile)
     {
         cout << "Unable to find specified file: " << pFile << endl;
-        glfwTerminate();
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     fseek(lFile, 0, SEEK_END);
     lLength = ftell(lFile);
@@ -450,7 +503,7 @@ char* shaderomatic::readFile(const char* pFile)
     fclose(lFile);
     lBuffer[lLength] = 0;
 
-    cout << lBuffer << endl;
+    //cout << lBuffer << endl;
 
     return lBuffer;
 }
