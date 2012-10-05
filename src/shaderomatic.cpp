@@ -367,7 +367,8 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
     if(lMatTexture.rows == 0 || lMatTexture.cols == 0)
     {
         cerr << "Failed to load texture." << endl;
-        return false;
+        cerr << "Using a black texture instead." << endl;
+        lMatTexture = cv::Mat::zeros(640, 480, CV_8UC3);
     }
 
     cv::flip(lMatTexture, lBufferTexture, 0);
