@@ -18,12 +18,17 @@ class shaderomatic
 {
 public:
     shaderomatic();
+    void setImageFile(char* pFile);
+    void setShaderFile(const char* pFileBasename);
     void init();
 
 private:
     /***********/
     // Attributs
     /***********/
+    std::string mImageFile;
+    std::string mVertexFile, mFragmentFile;
+
     bool mIsRunning;
 
     boost::chrono::steady_clock::time_point mClockStart; // Un chrono, comme son nom l'indique

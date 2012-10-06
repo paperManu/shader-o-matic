@@ -1,5 +1,6 @@
 #include "shaderomatic.h"
 
+#include <iostream>
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "boost/filesystem.hpp"
@@ -13,6 +14,11 @@ shaderomatic::shaderomatic()
       mShaderValid(false),
       mTimePerFrame(0.f)
 {
+    // Nom de fichiers par défaut
+    mImageFile = "texture.png";
+    mVertexFile = "shader.vert";
+    mFragmentFile = "shader.frag";
+
     // On initialise la texture pour le HUD
     mHUD = cv::Mat::zeros(32, 640, CV_8UC3);
 }
@@ -123,6 +129,22 @@ void shaderomatic::settings()
 }
 
 /********************************/
+void shaderomatic::setImageFile(char* pFile)
+{
+    mImageFile = pFile;
+}
+
+/********************************/
+void shaderomatic::setShaderFile(const char* pFileBasename)
+{
+    mVertexFile = pFileBasename;
+    mVertexFile += ".vert";
+
+    mFragmentFile = pFileBasename;
+    mFragmentFile += ".frag";
+}
+
+/********************************/
 void shaderomatic::prepareGeometry()
 {
     // Géométrie de l'arrière-plan
@@ -162,7 +184,7 @@ void shaderomatic::prepareTexture()
 {
     // Préparation des textures du fond et du HUD
     glGenTextures(2, mTexture);
-    if(!loadTexture("texture.png", mTexture[0]))
+    if(!loadTexture(mImageFile.c_str(), mTexture[0]))
         exit(EXIT_FAILURE);
 
     prepareHUDTexture();
@@ -207,7 +229,7 @@ bool shaderomatic::compileShader()
 
     // Vertex shader
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    lSrc = readFile("vertex.vert");
+    lSrc = readFile(mVertexFile.c_str());
     glShaderSource(mVertexShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mVertexShader);
     lResult = verifyShader(mVertexShader);
@@ -219,7 +241,7 @@ bool shaderomatic::compileShader()
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    lSrc = readFile("fragment.frag");
+    lSrc = readFile(mFragmentFile.c_str());
     glShaderSource(mFragmentShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mFragmentShader);
     lResult = verifyShader(mFragmentShader);
@@ -445,8 +467,9 @@ char* shaderomatic::readFile(const char* pFile)
     lLength = ftell(lFile);
     lBuffer = (char*)malloc(lLength+1);
     fseek(lFile, 0, SEEK_SET);
-    fread(lBuffer, lLength, 1, lFile);
+    long lSize = fread(lBuffer, lLength, 1, lFile);
     fclose(lFile);
+
     lBuffer[lLength] = 0;
 
     cout << lBuffer << endl;
@@ -527,9 +550,9 @@ bool shaderomatic::shaderChanged()
     bool lResult = false;
     std::time_t lTime;
 
-    if(boost::filesystem3::exists("vertex.vert"))
+    if(boost::filesystem3::exists(mVertexFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time("vertex.vert");
+        lTime = boost::filesystem3::last_write_time(mVertexFile.c_str());
         if(lTime != mVertexChange)
         {
             mVertexChange = lTime;
@@ -542,9 +565,9 @@ bool shaderomatic::shaderChanged()
         return false;
     }
 
-    if(boost::filesystem3::exists("fragment.frag"))
+    if(boost::filesystem3::exists(mFragmentFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time("fragment.frag");
+        lTime = boost::filesystem3::last_write_time(mFragmentFile.c_str());
         if(lTime != mFragmentChange)
         {
             mFragmentChange = lTime;
