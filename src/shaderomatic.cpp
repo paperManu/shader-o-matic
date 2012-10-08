@@ -12,7 +12,8 @@ using namespace boost::chrono;
 shaderomatic::shaderomatic()
     :mIsRunning(false),
       mShaderValid(false),
-      mTimePerFrame(0.f)
+      mTimePerFrame(0.f),
+      mSwapInterval(1)
 {
     // Nom de fichiers par défaut
     mImageFile = "texture.png";
@@ -44,7 +45,7 @@ void shaderomatic::init()
 
     glfwSetWindowTitle("shader-O-matic");
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(mSwapInterval);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
@@ -142,6 +143,12 @@ void shaderomatic::setShaderFile(const char* pFileBasename)
 
     mFragmentFile = pFileBasename;
     mFragmentFile += ".frag";
+}
+
+/********************************/
+void shaderomatic::setSwapInterval(int pSwap)
+{
+    mSwapInterval = std::max(0, pSwap);
 }
 
 /********************************/
