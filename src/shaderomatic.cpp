@@ -272,10 +272,7 @@ bool shaderomatic::compileShader()
 
     // Vertex shader
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
-<<<<<<< HEAD
     lSrc = readFile(mVertexFile.c_str());
-=======
-    lSrc = readFile("vertex.vert");
     bool isPresent = true;
     if(lSrc == NULL)
     {
@@ -283,7 +280,6 @@ bool shaderomatic::compileShader()
         isPresent = false;
     }
 
->>>>>>> defaultShader
     glShaderSource(mVertexShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mVertexShader);
     lResult = verifyShader(mVertexShader);
@@ -297,10 +293,7 @@ bool shaderomatic::compileShader()
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-<<<<<<< HEAD
     lSrc = readFile(mFragmentFile.c_str());
-=======
-    lSrc = readFile("fragment.frag");
     isPresent = true;
     if(lSrc == NULL)
     {
@@ -308,7 +301,6 @@ bool shaderomatic::compileShader()
         isPresent = false;
     }
 
->>>>>>> defaultShader
     glShaderSource(mFragmentShader, 1, (const GLchar**)&lSrc, 0);
     glCompileShader(mFragmentShader);
     lResult = verifyShader(mFragmentShader);
