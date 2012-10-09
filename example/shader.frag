@@ -53,7 +53,8 @@ vec4 tvScreen(vec4 lIn, sampler2D lTex)
 vec4 ball()
 {
     float lRadius = 20.f;
-    vec4 lOut = vec4(0.0, 0.0, 0.0, 0.0);
+
+    vec4 lOut = vec4(0.0, 0.0, 0.0, 1.0);
 
     float lDistance = distance(gl_FragCoord.xy, vMouse.xy);
     if(lDistance < lRadius)
