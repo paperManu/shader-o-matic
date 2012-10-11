@@ -623,7 +623,6 @@ bool shaderomatic::shaderChanged()
     else
     {
         mVertexChange = 0;
-        return false;
     }
 
     if(boost::filesystem3::exists(mFragmentFile.c_str()))
@@ -638,7 +637,6 @@ bool shaderomatic::shaderChanged()
     else
     {
         mFragmentChange = 0;
-        return false;
     }
 
     return lResult;
