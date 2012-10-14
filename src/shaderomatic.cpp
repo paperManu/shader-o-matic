@@ -349,6 +349,7 @@ bool shaderomatic::compileShader()
     mMVPMatLocation = glGetUniformLocation(mShaderProgram, "vMVP");
     mTimerLocation = glGetUniformLocation(mShaderProgram, "vTimer");
     mResolutionLocation = glGetUniformLocation(mShaderProgram, "vResolution");
+    mTextureResLocation = glGetUniformLocation(mShaderProgram, "vTexResolution");
     mPassLocation = glGetUniformLocation(mShaderProgram, "vPass");
 
     return true;
@@ -404,6 +405,10 @@ void shaderomatic::draw()
         lRes[1] = (float)mWindowHeight;
         glUniform2fv(mResolutionLocation, 1, (GLfloat*)lRes);
 
+        lRes[0] = (float)mTextureWidth;
+        lRes[1] = (float)mTextureHeight;
+        glUniform2fv(mTextureResLocation, 1, (GLfloat*)lRes);
+
         // Rendering
         glm::mat4 lProjMatrix = glm::ortho(-1.f, 1.f, -1.f, 1.f);
         glUniformMatrix4fv(mMVPMatLocation, 1, GL_FALSE, glm::value_ptr(lProjMatrix));
@@ -451,7 +456,7 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
     {
         cerr << "Failed to load texture." << endl;
         cerr << "Using a black texture instead." << endl;
-        lMatTexture = cv::Mat::zeros(600, 800, CV_8UC3);
+        lMatTexture = cv::Mat::zeros(512, 512, CV_8UC3);
     }
 
     cv::flip(lMatTexture, lBufferTexture, 0);
@@ -479,6 +484,9 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glfwSetWindowSize(lMatTexture.cols, lMatTexture.rows);
+    mTextureWidth = lMatTexture.cols;
+    mTextureHeight = lMatTexture.rows;
+
     mWindowWidth = lMatTexture.cols;
     mWindowHeight = lMatTexture.rows;
 

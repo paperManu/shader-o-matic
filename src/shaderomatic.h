@@ -38,6 +38,7 @@ private:
     float mTimePerFrame; // Temps de rendu de la dernière image
     cv::Mat mHUD; // Image OpenCV pour stocker des infos
 
+    int mTextureWidth, mTextureHeight;
     int mWindowWidth, mWindowHeight;
 
     // OpengL
@@ -55,6 +56,7 @@ private:
     GLint mMouseLocation;
     GLint mTimerLocation;
     GLint mResolutionLocation;
+    GLint mTextureResLocation;
     GLint mHUDLocation;
     GLint mPassLocation;
 
