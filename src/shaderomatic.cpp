@@ -360,9 +360,10 @@ void shaderomatic::draw()
 {
     // On vérifie que les shaders n'ont pas changé
     if(shaderChanged())
-    {
         mShaderValid = compileShader();
-    }
+
+    if(textureChanged())
+        updateTexture(mImageFile.c_str(), mTexture[0]);
 
     // Rendu de la fenêtre
     if(mShaderValid)
@@ -449,6 +450,8 @@ void shaderomatic::draw()
 /********************************/
 bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
 {
+    cout << "Loading texture " << pFilename << endl;
+
     cv::Mat lMatTexture, lBufferTexture;
     lMatTexture = cv::imread(pFilename);
 
@@ -458,8 +461,14 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
         cerr << "Using a black texture instead." << endl;
         lMatTexture = cv::Mat::zeros(512, 512, CV_8UC3);
     }
+    else
+    {
+        mImageChange = boost::filesystem3::last_write_time(mImageFile.c_str());
+    }
 
     cv::flip(lMatTexture, lBufferTexture, 0);
+
+    glGetError();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pTexture);
@@ -489,6 +498,40 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
 
     mWindowWidth = lMatTexture.cols;
     mWindowHeight = lMatTexture.rows;
+
+    return true;
+}
+
+/***************************/
+bool shaderomatic::updateTexture(const char* pFilename, GLuint pTexture)
+{
+    cout << "Reloading texture " << pFilename << endl;
+
+    cv::Mat lMatTexture, lBufferTexture;
+    lMatTexture = cv::imread(pFilename);
+
+    if(lMatTexture.rows == 0 || lMatTexture.cols == 0)
+    {
+        cerr << "Failed to load texture." << endl;
+        cerr << "Using a black texture instead." << endl;
+        lMatTexture = cv::Mat::zeros(512, 512, CV_8UC3);
+    }
+
+    cv::flip(lMatTexture, lBufferTexture, 0);
+
+    glGetError();
+    glActiveTexture(GL_TEXTURE8);
+    glBindTexture(GL_TEXTURE_2D, pTexture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lBufferTexture.cols, lBufferTexture.rows, GL_BGR, GL_UNSIGNED_BYTE, lBufferTexture.data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+
+    GLenum lError = glGetError();
+    if(lError)
+    {
+        cerr << "Error while updating texture" << endl;
+    }
 
     return true;
 }
@@ -647,5 +690,26 @@ bool shaderomatic::shaderChanged()
         mFragmentChange = 0;
     }
 
+    return lResult;
+}
+
+
+/***************************/
+bool shaderomatic::textureChanged()
+{
+    bool lResult = false;
+    std::time_t lTime;
+
+    if(boost::filesystem3::exists(mImageFile.c_str()))
+    {
+        lTime = boost::filesystem3::last_write_time(mImageFile.c_str());
+        if(lTime != mImageChange)
+        {
+            sleep(1); // Pour être certain que le fichier est écrit en entier
+            mImageChange = lTime;
+            lResult = true;
+        }
+    }
+    
     return lResult;
 }

@@ -62,6 +62,7 @@ private:
 
     std::time_t mVertexChange;
     std::time_t mFragmentChange;
+    std::time_t mImageChange;
 
     GLuint mFBO;
     GLuint mFBOTexture;
@@ -80,6 +81,8 @@ private:
     void draw();
 
     bool loadTexture(const char* pFilename, GLuint pTexture);
+    bool updateTexture(const char* pFilename, GLuint pTexture);
+    bool textureChanged();
     void prepareHUDTexture();
 
     char* readFile(const char* pFile);
