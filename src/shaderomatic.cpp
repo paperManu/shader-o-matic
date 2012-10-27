@@ -277,11 +277,11 @@ bool shaderomatic::compileShader()
     // Vertex shader
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
     lSrc = readFile(mVertexFile.c_str());
-    bool isPresent = true;
+    bool isVertPresent = true;
     if(lSrc == NULL)
     {
         lSrc = gDefaultVertShader;
-        isPresent = false;
+        isVertPresent = false;
     }
 
     glShaderSource(mVertexShader, 1, (const GLchar**)&lSrc, 0);
@@ -292,32 +292,35 @@ bool shaderomatic::compileShader()
         return false;
     }
 
-    if(isPresent)
+    if(isVertPresent)
         free(lSrc);
 
     // Geometry shader
     mGeometryShader = glCreateShader(GL_GEOMETRY_SHADER);
     lSrc = readFile(mGeometryFile.c_str());
-    isPresent = true;
+    bool isGeomPresent = true;
     if(lSrc == NULL)
-        isPresent = false;
+        isGeomPresent = false;
     else
     {
         glShaderSource(mGeometryShader, 1, (const GLchar**)&lSrc, 0);
         glCompileShader(mGeometryShader);
         lResult = verifyShader(mGeometryShader);
-        if(lResult)
+        if(!lResult)
             return false;
     }
+
+    if(isGeomPresent)
+        free(lSrc);
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     lSrc = readFile(mFragmentFile.c_str());
-    isPresent = true;
+    bool isFragPresent = true;
     if(lSrc == NULL)
     {
         lSrc = gDefaultFragShader;
-        isPresent = false;
+        isFragPresent = false;
     }
 
     glShaderSource(mFragmentShader, 1, (const GLchar**)&lSrc, 0);
@@ -328,12 +331,14 @@ bool shaderomatic::compileShader()
         return false;
     }
 
-    if(isPresent)
+    if(isFragPresent)
         free(lSrc);
 
     // Création du programme
     mShaderProgram = glCreateProgram();
     glAttachShader(mShaderProgram, mVertexShader);
+    if(isGeomPresent)
+        glAttachShader(mShaderProgram, mGeometryShader);
     glAttachShader(mShaderProgram, mFragmentShader);
     glBindAttribLocation(mShaderProgram, 0, "vVertex");
     glBindAttribLocation(mShaderProgram, 1, "vTexCoord");
