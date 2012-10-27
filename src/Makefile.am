@@ -4,6 +4,9 @@ shaderomatic_SOURCES = \
     main.cpp \
 	shaderomatic.cpp
 
+noinst_HEADERS = \
+	shaderomatic.h
+
 shaderomatic_CXXFLAGS = \
     $(LIBGLFW_CFLAGS) \
 	$(OPENCV_CFLAGS) \

@@ -30,7 +30,7 @@ private:
     // Paramètres
     int mSwapInterval;
     std::string mImageFile;
-    std::string mVertexFile, mFragmentFile;
+    std::string mVertexFile, mGeometryFile, mFragmentFile;
 
     bool mIsRunning;
 
@@ -49,6 +49,7 @@ private:
     GLuint mTexture[2];
 
     GLuint mVertexShader;
+    GLuint mGeometryShader;
     GLuint mFragmentShader;
     GLuint mShaderProgram;
 
@@ -61,6 +62,7 @@ private:
     GLint mPassLocation;
 
     std::time_t mVertexChange;
+    std::time_t mGeometryChange;
     std::time_t mFragmentChange;
     std::time_t mImageChange;
 

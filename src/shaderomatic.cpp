@@ -59,6 +59,7 @@ shaderomatic::shaderomatic()
     // Nom de fichiers par défaut
     mImageFile = "texture.png";
     mVertexFile = "shader.vert";
+    mGeometryFile = "shader.geom";
     mFragmentFile = "shader.frag";
 
     // On initialise la texture pour le HUD
@@ -177,6 +178,9 @@ void shaderomatic::setShaderFile(const char* pFileBasename)
     mVertexFile = pFileBasename;
     mVertexFile += ".vert";
 
+    mGeometryFile = pFileBasename;
+    mGeometryFile += ".geom";
+
     mFragmentFile = pFileBasename;
     mFragmentFile += ".frag";
 }
@@ -290,6 +294,21 @@ bool shaderomatic::compileShader()
 
     if(isPresent)
         free(lSrc);
+
+    // Geometry shader
+    mGeometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    lSrc = readFile(mGeometryFile.c_str());
+    isPresent = true;
+    if(lSrc == NULL)
+        isPresent = false;
+    else
+    {
+        glShaderSource(mGeometryShader, 1, (const GLchar**)&lSrc, 0);
+        glCompileShader(mGeometryShader);
+        lResult = verifyShader(mGeometryShader);
+        if(lResult)
+            return false;
+    }
 
     // Fragment shader
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -676,6 +695,20 @@ bool shaderomatic::shaderChanged()
         mVertexChange = 0;
     }
 
+     if(boost::filesystem3::exists(mGeometryFile.c_str()))
+    {
+        lTime = boost::filesystem3::last_write_time(mGeometryFile.c_str());
+        if(lTime != mVertexChange)
+        {
+            mGeometryChange = lTime;
+            lResult |= true;
+        }
+    }
+    else
+    {
+        mGeometryChange = 0;
+    }
+    
     if(boost::filesystem3::exists(mFragmentFile.c_str()))
     {
         lTime = boost::filesystem3::last_write_time(mFragmentFile.c_str());
