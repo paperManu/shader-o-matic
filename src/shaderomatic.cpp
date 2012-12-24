@@ -487,7 +487,7 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
     }
     else
     {
-        mImageChange = boost::filesystem3::last_write_time(mImageFile.c_str());
+        mImageChange = boost::filesystem::last_write_time(mImageFile.c_str());
     }
 
     cv::flip(lMatTexture, lBufferTexture, 0);
@@ -686,9 +686,9 @@ bool shaderomatic::shaderChanged()
     bool lResult = false;
     std::time_t lTime;
 
-    if(boost::filesystem3::exists(mVertexFile.c_str()))
+    if(boost::filesystem::exists(mVertexFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time(mVertexFile.c_str());
+        lTime = boost::filesystem::last_write_time(mVertexFile.c_str());
         if(lTime != mVertexChange)
         {
             mVertexChange = lTime;
@@ -700,9 +700,9 @@ bool shaderomatic::shaderChanged()
         mVertexChange = 0;
     }
 
-     if(boost::filesystem3::exists(mGeometryFile.c_str()))
+     if(boost::filesystem::exists(mGeometryFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time(mGeometryFile.c_str());
+        lTime = boost::filesystem::last_write_time(mGeometryFile.c_str());
         if(lTime != mVertexChange)
         {
             mGeometryChange = lTime;
@@ -714,9 +714,9 @@ bool shaderomatic::shaderChanged()
         mGeometryChange = 0;
     }
     
-    if(boost::filesystem3::exists(mFragmentFile.c_str()))
+    if(boost::filesystem::exists(mFragmentFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time(mFragmentFile.c_str());
+        lTime = boost::filesystem::last_write_time(mFragmentFile.c_str());
         if(lTime != mFragmentChange)
         {
             mFragmentChange = lTime;
@@ -738,9 +738,9 @@ bool shaderomatic::textureChanged()
     bool lResult = false;
     std::time_t lTime;
 
-    if(boost::filesystem3::exists(mImageFile.c_str()))
+    if(boost::filesystem::exists(mImageFile.c_str()))
     {
-        lTime = boost::filesystem3::last_write_time(mImageFile.c_str());
+        lTime = boost::filesystem::last_write_time(mImageFile.c_str());
         if(lTime != mImageChange)
         {
             sleep(1); // Pour être certain que le fichier est écrit en entier
