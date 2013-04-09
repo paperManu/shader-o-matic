@@ -703,7 +703,7 @@ bool shaderomatic::shaderChanged()
      if(boost::filesystem::exists(mGeometryFile.c_str()))
     {
         lTime = boost::filesystem::last_write_time(mGeometryFile.c_str());
-        if(lTime != mVertexChange)
+        if(lTime != mGeometryChange)
         {
             mGeometryChange = lTime;
             lResult |= true;
