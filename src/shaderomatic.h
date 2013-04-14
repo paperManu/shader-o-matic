@@ -20,6 +20,7 @@ public:
     shaderomatic();
     void setImageFile(char* pFile);
     void setShaderFile(const char* pFileBasename);
+    void setResolution(const int pWidth, const int pHeight);
     void setSwapInterval(int pSwap);
     void init();
 

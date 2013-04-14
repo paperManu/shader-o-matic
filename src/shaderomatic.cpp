@@ -54,7 +54,9 @@ shaderomatic::shaderomatic()
     :mIsRunning(false),
       mShaderValid(false),
       mTimePerFrame(0.f),
-      mSwapInterval(1)
+      mSwapInterval(1),
+      mWindowWidth(640),
+      mWindowHeight(480)
 {
     // Nom de fichiers par défaut
     mImageFile = "texture.png";
@@ -78,7 +80,7 @@ void shaderomatic::init()
     }
 
     settings();
-    if(!glfwOpenWindow(640, 480, 0, 0, 0, 0, 0, 0, GLFW_WINDOW))
+    if(!glfwOpenWindow(mWindowWidth, mWindowHeight, 0, 0, 0, 0, 0, 0, GLFW_WINDOW))
     {
         cerr << "Failed to create gl window." << endl;
         glfwTerminate();
@@ -183,6 +185,13 @@ void shaderomatic::setShaderFile(const char* pFileBasename)
 
     mFragmentFile = pFileBasename;
     mFragmentFile += ".frag";
+}
+
+/********************************/
+void shaderomatic::setResolution(const int pWidth, const int pHeight)
+{
+    mWindowWidth = max(64, pWidth);
+    mWindowHeight = max(48, pHeight);
 }
 
 /********************************/
@@ -516,12 +525,8 @@ bool shaderomatic::loadTexture(const char *pFilename, GLuint pTexture)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glfwSetWindowSize(lMatTexture.cols, lMatTexture.rows);
     mTextureWidth = lMatTexture.cols;
     mTextureHeight = lMatTexture.rows;
-
-    mWindowWidth = lMatTexture.cols;
-    mWindowHeight = lMatTexture.rows;
 
     return true;
 }
