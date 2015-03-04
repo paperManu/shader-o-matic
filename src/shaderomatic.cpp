@@ -80,15 +80,15 @@ void shaderomatic::init()
     }
 
     settings();
-    if(!glfwOpenWindow(mWindowWidth, mWindowHeight, 0, 0, 0, 0, 0, 0, GLFW_WINDOW))
+    mGlfwWindow = glfwCreateWindow(mWindowWidth, mWindowHeight, "shader-0-matic", nullptr, nullptr);
+    if(mGlfwWindow == nullptr)
     {
         cerr << "Failed to create gl window." << endl;
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetWindowTitle("shader-O-matic");
-
+    glfwMakeContextCurrent(mGlfwWindow);
     glfwSwapInterval(mSwapInterval);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -101,7 +101,7 @@ void shaderomatic::init()
     prepareTexture();
 
     // et quelques infos
-    glfwGetWindowSize(&mWindowWidth, &mWindowHeight);
+    glfwGetWindowSize(mGlfwWindow, &mWindowWidth, &mWindowHeight);
     glViewport(0, 0, mWindowWidth, mWindowHeight);
 
     // Préparation du FBO, pour faire le rendu en 2 passes
@@ -121,12 +121,14 @@ void shaderomatic::init()
     mIsRunning = true;
     while(mIsRunning)
     {
+        glfwPollEvents();
+
         // Début du rendu de la frame
         lTimerFPS = steady_clock::now();
 
         // On vérifie que la taille de la fenêtre n'a pas changé
         int lWidth, lHeight;
-        glfwGetWindowSize(&lWidth, &lHeight);
+        glfwGetWindowSize(mGlfwWindow, &lWidth, &lHeight);
         if(lWidth != mWindowWidth || lHeight != mWindowHeight)
         {
            mWindowWidth = lWidth;
@@ -146,7 +148,7 @@ void shaderomatic::init()
 
         // Rendu
         draw();
-        if(glfwGetKey(GLFW_KEY_ESC) || !glfwGetWindowParam(GLFW_OPENED))
+        if(glfwGetKey(mGlfwWindow, GLFW_KEY_ESCAPE))
         {
             mIsRunning = false;
         }
@@ -155,6 +157,7 @@ void shaderomatic::init()
         mTimePerFrame = duration<float>((steady_clock::now() - lTimerFPS)).count();
     }
 
+    glfwMakeContextCurrent(nullptr);
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
@@ -162,10 +165,9 @@ void shaderomatic::init()
 /********************************/
 void shaderomatic::settings()
 {
-    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }
 
 /********************************/
@@ -422,8 +424,8 @@ void shaderomatic::draw()
         }
 
         // Mouse position
-        int lMouseX, lMouseY;
-        glfwGetMousePos(&lMouseX, &lMouseY);
+        double lMouseX, lMouseY;
+        glfwGetCursorPos(mGlfwWindow, &lMouseX, &lMouseY);
         float lMouse[2];
         lMouse[0] = max(0.f, min((float)mWindowWidth-1.f, (float)lMouseX));
         lMouse[1] = (float)mWindowHeight-1.f - max(0.f, min((float)mWindowHeight-1.f, (float)lMouseY));
@@ -471,12 +473,12 @@ void shaderomatic::draw()
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        glfwSwapBuffers();
+        glfwSwapBuffers(mGlfwWindow);
     }
     else
     {
         glClear(GL_COLOR_BUFFER_BIT);
-        glfwSwapBuffers();
+        glfwSwapBuffers(mGlfwWindow);
     }
 }
 

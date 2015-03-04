@@ -1,13 +1,12 @@
 #ifndef SHADEROMATIC_H
 #define SHADEROMATIC_H
 
-#define GLFW_INCLUDE_GL3
-#define GLFW_NO_GLU
-#define GL3_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
+#define GLX_GLXEXT_PROTOTYPES
 
 #include <ctime>
 #include <iostream>
-#include "GL/glfw.h"
+#include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 #include "opencv2/opencv.hpp"
 #include "boost/chrono/chrono.hpp"
@@ -41,6 +40,9 @@ private:
 
     int mTextureWidth, mTextureHeight;
     int mWindowWidth, mWindowHeight;
+
+    // GLFW
+    GLFWwindow* mGlfwWindow {nullptr};
 
     // OpengL
     bool mShaderValid;

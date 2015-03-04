@@ -1,3 +1,6 @@
+AM_CPPFLAGS = \
+	-DGLM_FORCE_RADIANS
+
 bin_PROGRAMS = shaderomatic
 
 shaderomatic_SOURCES = \
@@ -8,14 +11,14 @@ noinst_HEADERS = \
 	shaderomatic.h
 
 shaderomatic_CXXFLAGS = \
-    $(LIBGLFW_CFLAGS) \
+    $(GLFW_CFLAGS) \
 	$(OPENCV_CFLAGS) \
 	$(GL_CFLAGS) \
 	$(BOOST_CPPFLAGS) \
 	$(GLIB_CFLAGS)
 
 shaderomatic_LDADD = \
-    $(LIBGLFW_LIBS) \
+    $(GLFW_LIBS) \
 	$(OPENCV_LIBS) \
 	$(GL_LIBS) \
 	$(BOOST_SYSTEM_LIBS) \

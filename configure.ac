@@ -11,13 +11,15 @@ AM_INIT_AUTOMAKE()
 AC_PROG_CXX
 AC_PROG_CC
 
+CXXFLAGS="$CXXFLAGS -std=c++11"
+
 # Check for header files
 AC_HEADER_STDC
 
 # GLFW
-PKG_CHECK_MODULES([LIBGLFW], [libglfw >= 2.7.4])
+PKG_CHECK_MODULES([GLFW], [glfw3 >= 3.0.3])
 if test "x${have_glfw}" = "xfalse" ; then
-    AC_MSG_ERROR([Missing glfw])
+    AC_MSG_ERROR([Missing glfw3])
 fi
 
 # OpenCV
