@@ -49,7 +49,7 @@ char gDefaultFragShader[] =
     "    fragColor += texture(vHUDMap, vec2(finalTexCoord.s, finalTexCoord.t*lHUDScale));\n"
     "}\n";
 
-/********************************/
+/*************/
 shaderomatic::shaderomatic()
     :mIsRunning(false),
       mShaderValid(false),
@@ -68,7 +68,36 @@ shaderomatic::shaderomatic()
     mHUD = cv::Mat::zeros(32, 640, CV_8UC3);
 }
 
-/********************************/
+/*************/
+void shaderomatic::glMsgCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void*)
+{
+    string typeString {""};
+    switch (type)
+    {
+    case GL_DEBUG_TYPE_ERROR:
+        typeString = "Error";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        typeString = "Deprecated behavior";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        typeString = "Undefined behavior";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        typeString = "Portability";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        typeString = "Performance";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        typeString = "Other";
+        break;
+    }
+
+    cout << "GL::debug - [" << typeString << "] - " << message << endl; 
+}
+
+/*************/
 void shaderomatic::init()
 {
     // On prépare OpenGL
@@ -90,6 +119,10 @@ void shaderomatic::init()
 
     glfwMakeContextCurrent(mGlfwWindow);
     glfwSwapInterval(mSwapInterval);
+
+    glDebugMessageCallback(shaderomatic::glMsgCallback, nullptr);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
@@ -146,14 +179,12 @@ void shaderomatic::init()
            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
         }
 
-        // Rendu
         draw();
         if(glfwGetKey(mGlfwWindow, GLFW_KEY_ESCAPE))
         {
             mIsRunning = false;
         }
 
-        // Calcul du temps nécessaire pour cette frame
         mTimePerFrame = duration<float>((steady_clock::now() - lTimerFPS)).count();
     }
 
@@ -162,25 +193,32 @@ void shaderomatic::init()
     exit(EXIT_SUCCESS);
 }
 
-/********************************/
+/*************/
 void shaderomatic::settings()
 {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 }
 
-/********************************/
+/*************/
 void shaderomatic::setImageFile(char* pFile)
 {
     mImageFile = pFile;
 }
 
-/********************************/
+/*************/
 void shaderomatic::setShaderFile(const char* pFileBasename)
 {
     mVertexFile = pFileBasename;
     mVertexFile += ".vert";
+
+    mTessControlFile = pFileBasename;
+    mTessControlFile += ".tcs";
+    
+    mTessEvalFile = pFileBasename;
+    mTessEvalFile += ".tes";
 
     mGeometryFile = pFileBasename;
     mGeometryFile += ".geom";
@@ -189,14 +227,14 @@ void shaderomatic::setShaderFile(const char* pFileBasename)
     mFragmentFile += ".frag";
 }
 
-/********************************/
+/*************/
 void shaderomatic::setResolution(const int pWidth, const int pHeight)
 {
     mWindowWidth = max(64, pWidth);
     mWindowHeight = max(48, pHeight);
 }
 
-/********************************/
+/*************/
 void shaderomatic::setSwapInterval(int pSwap)
 {
     mSwapInterval = std::max(0, pSwap);
@@ -289,7 +327,7 @@ bool shaderomatic::compileShader()
     mVertexShader = glCreateShader(GL_VERTEX_SHADER);
     lSrc = readFile(mVertexFile.c_str());
     bool isVertPresent = true;
-    if(lSrc == NULL)
+    if(lSrc == nullptr)
     {
         lSrc = gDefaultVertShader;
         isVertPresent = false;
@@ -306,11 +344,51 @@ bool shaderomatic::compileShader()
     if(isVertPresent)
         free(lSrc);
 
+    // Tessellation control shader
+    mTessellationControlShader = glCreateShader(GL_TESS_CONTROL_SHADER);
+    lSrc = readFile(mTessControlFile.c_str());
+    bool isTessControlPresent = true;
+    if (lSrc == nullptr)
+    {
+        isTessControlPresent = false;
+    }
+    else
+    {
+        glShaderSource(mTessellationControlShader, 1, (const GLchar**)&lSrc, 0);
+        glCompileShader(mTessellationControlShader);
+        lResult = verifyShader(mTessellationControlShader);
+        if (!lResult)
+            return false;
+    }
+
+    if (isTessControlPresent)
+        free(lSrc);
+
+    // Tessellation evaluation shader
+    mTessellationEvaluationShader = glCreateShader(GL_TESS_EVALUATION_SHADER);
+    lSrc = readFile(mTessEvalFile.c_str());
+    bool isTessEvalPresent = true;
+    if (lSrc == nullptr)
+    {
+        isTessEvalPresent = false;
+    }
+    else
+    {
+        glShaderSource(mTessellationEvaluationShader, 1, (const GLchar**)&lSrc, 0);
+        glCompileShader(mTessellationEvaluationShader);
+        lResult = verifyShader(mTessellationEvaluationShader);
+        if (!lResult)
+            return false;
+    }
+
+    if (isTessEvalPresent)
+        free(lSrc);
+
     // Geometry shader
     mGeometryShader = glCreateShader(GL_GEOMETRY_SHADER);
     lSrc = readFile(mGeometryFile.c_str());
     bool isGeomPresent = true;
-    if(lSrc == NULL)
+    if(lSrc == nullptr)
         isGeomPresent = false;
     else
     {
@@ -328,7 +406,7 @@ bool shaderomatic::compileShader()
     mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     lSrc = readFile(mFragmentFile.c_str());
     bool isFragPresent = true;
-    if(lSrc == NULL)
+    if(lSrc == nullptr)
     {
         lSrc = gDefaultFragShader;
         isFragPresent = false;
@@ -348,8 +426,17 @@ bool shaderomatic::compileShader()
     // Création du programme
     mShaderProgram = glCreateProgram();
     glAttachShader(mShaderProgram, mVertexShader);
+    if(isTessControlPresent && isTessEvalPresent)
+    {
+        glAttachShader(mShaderProgram, mTessellationControlShader);
+        glAttachShader(mShaderProgram, mTessellationEvaluationShader);
+        mTessellate = true;
+    }
+    else
+        mTessellate = false;
     if(isGeomPresent)
         glAttachShader(mShaderProgram, mGeometryShader);
+
     glAttachShader(mShaderProgram, mFragmentShader);
     glBindAttribLocation(mShaderProgram, 0, "vVertex");
     glBindAttribLocation(mShaderProgram, 1, "vTexCoord");
@@ -393,17 +480,16 @@ bool shaderomatic::compileShader()
 /********************************/
 void shaderomatic::draw()
 {
-    // On vérifie que les shaders n'ont pas changé
+    // Check shaders
     if(shaderChanged())
         mShaderValid = compileShader();
 
     if(textureChanged())
         updateTexture(mImageFile.c_str(), mTexture[0]);
 
-    // Rendu de la fenêtre
     if(mShaderValid)
     {
-        // Rendu du HUD
+        // HUD rendering
         string lHUDText = string("Fps: ") + boost::lexical_cast<string>((int)(1.f/mTimePerFrame));
         lHUDText += string(" (") + boost::lexical_cast<string>(mTimePerFrame*1000) + string(" msec per frame)");
 
@@ -449,19 +535,29 @@ void shaderomatic::draw()
         glm::mat4 lProjMatrix = glm::ortho(-1.f, 1.f, -1.f, 1.f);
         glUniformMatrix4fv(mMVPMatLocation, 1, GL_FALSE, glm::value_ptr(lProjMatrix));
 
-        // Première passe : rendu dans le FBO
+        // First pass to FBO
+        if (mWireframe)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glLineWidth(2);
+            glEnable(GL_LINE_SMOOTH);
+        }
         glUniform1i(mPassLocation, (GLint)0);
         GLenum lFBOBuf[] = {GL_COLOR_ATTACHMENT0};
         glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
         glDrawBuffers(1, lFBOBuf);
         glClear(GL_COLOR_BUFFER_BIT);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        if (mTessellate)
+            glDrawArrays(GL_PATCHES, 0, 6);
+        else
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glBindTexture(GL_TEXTURE_2D, mFBOTexture);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        // Seconde passe : rendu dans le back buffer
+        // Second pass to back buffer
         glUniform1i(mPassLocation, (GLint)1);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         GLenum lBackbuffer[] = {GL_BACK};
@@ -471,7 +567,13 @@ void shaderomatic::draw()
 
         glDrawBuffers(1, lBackbuffer);
         glClear(GL_COLOR_BUFFER_BIT);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        if (mTessellate)
+            glDrawArrays(GL_PATCHES, 0, 6);
+        else
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        if (mWireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glfwSwapBuffers(mGlfwWindow);
     }
@@ -707,7 +809,35 @@ bool shaderomatic::shaderChanged()
         mVertexChange = 0;
     }
 
-     if(boost::filesystem::exists(mGeometryFile.c_str()))
+    if(boost::filesystem::exists(mTessControlFile.c_str()))
+    {
+        lTime = boost::filesystem::last_write_time(mTessControlFile.c_str());
+        if(lTime != mTessControlChange)
+        {
+            mTessControlChange = lTime;
+            lResult |= true;
+        }
+    }
+    else
+    {
+        mTessControlChange = 0;
+    }
+
+    if(boost::filesystem::exists(mTessEvalFile.c_str()))
+    {
+        lTime = boost::filesystem::last_write_time(mTessEvalFile.c_str());
+        if(lTime != mTessEvalChange)
+        {
+            mTessEvalChange = lTime;
+            lResult |= true;
+        }
+    }
+    else
+    {
+        mTessEvalChange = 0;
+    }
+
+    if(boost::filesystem::exists(mGeometryFile.c_str()))
     {
         lTime = boost::filesystem::last_write_time(mGeometryFile.c_str());
         if(lTime != mGeometryChange)

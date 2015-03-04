@@ -21,22 +21,21 @@ public:
     void setShaderFile(const char* pFileBasename);
     void setResolution(const int pWidth, const int pHeight);
     void setSwapInterval(int pSwap);
+    void setWireframe(bool wire) {mWireframe = wire;}
     void init();
 
 private:
     /***********/
-    // Attributs
-    /***********/
-    // Paramètres
+    // Attributes
     int mSwapInterval;
     std::string mImageFile;
-    std::string mVertexFile, mGeometryFile, mFragmentFile;
+    std::string mVertexFile, mTessControlFile, mTessEvalFile, mGeometryFile, mFragmentFile;
 
     bool mIsRunning;
 
-    boost::chrono::steady_clock::time_point mClockStart; // Un chrono, comme son nom l'indique
-    float mTimePerFrame; // Temps de rendu de la dernière image
-    cv::Mat mHUD; // Image OpenCV pour stocker des infos
+    boost::chrono::steady_clock::time_point mClockStart;
+    float mTimePerFrame;
+    cv::Mat mHUD;
 
     int mTextureWidth, mTextureHeight;
     int mWindowWidth, mWindowHeight;
@@ -46,12 +45,16 @@ private:
 
     // OpengL
     bool mShaderValid;
+    bool mWireframe {false};
+    bool mTessellate {false};
 
     GLuint mVertexArray;
     GLuint mVertexBuffer[2];
     GLuint mTexture[2];
 
     GLuint mVertexShader;
+    GLuint mTessellationControlShader;
+    GLuint mTessellationEvaluationShader;
     GLuint mGeometryShader;
     GLuint mFragmentShader;
     GLuint mShaderProgram;
@@ -65,6 +68,8 @@ private:
     GLint mPassLocation;
 
     std::time_t mVertexChange;
+    std::time_t mTessControlChange;
+    std::time_t mTessEvalChange;
     std::time_t mGeometryChange;
     std::time_t mFragmentChange;
     std::time_t mImageChange;
@@ -72,13 +77,13 @@ private:
     GLuint mFBO;
     GLuint mFBOTexture;
 
-    /**********/
-    // Méthodes
-    /**********/
+    // Methods
     void settings();
 
+    static void glMsgCallback(GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar*, const void*);
+
     void prepareFBO();
-    void prepareGeometry(); // Soit 2 triangles ...
+    void prepareGeometry();
     void prepareTexture();
     bool compileShader();
     bool verifyShader(GLuint pShader);

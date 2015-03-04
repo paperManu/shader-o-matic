@@ -1,19 +1,19 @@
 #include "shaderomatic.h"
 #include "glib.h"
 
-static gboolean gVersion = FALSE;
 static gchar* gFilename = NULL;
 static gchar* gShadername = NULL;
 static gchar* gResolution = NULL;
 static gint gSwapInterval = 1;
+static gboolean gWireframe = FALSE;
 
 static GOptionEntry gEntries[] =
 {
-    {"version", 'v', 0, G_OPTION_ARG_NONE, &gVersion, "Shows version of shader-o-matic.", NULL},
     {"image", 'i', 0, G_OPTION_ARG_STRING, &gFilename, "Specifies the image to use as texture (with extension).", NULL},
     {"shader", 's', 0, G_OPTION_ARG_STRING, &gShadername, "Specifies the base name of the shader files (without extension).", NULL},
     {"res", 'r', 0, G_OPTION_ARG_STRING, &gResolution, "Specifies the startup resolution (defaults to 640x480).", NULL},
     {"swap", 0, 0, G_OPTION_ARG_INT, &gSwapInterval, "Specifies the frame swap interval.", NULL},
+    {"wireframe", 'w', 0, G_OPTION_ARG_NONE, &gWireframe, "Draw objects as wireframe.", NULL},
     {NULL}
 };
 
@@ -45,6 +45,10 @@ int main(int argc, char** argv)
         w = h = 0;
         sscanf(gResolution, "%ix%i", &w, &h);
         app.setResolution(w, h);
+    }
+    if (gWireframe == TRUE)
+    {
+        app.setWireframe(true);
     }
     app.setSwapInterval(gSwapInterval);
 
