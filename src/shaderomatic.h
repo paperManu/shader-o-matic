@@ -4,6 +4,7 @@
 #define GL_GLEXT_PROTOTYPES
 #define GLX_GLXEXT_PROTOTYPES
 
+#include <atomic>
 #include <ctime>
 #include <iostream>
 #include "GLFW/glfw3.h"
@@ -42,6 +43,7 @@ private:
 
     // GLFW
     GLFWwindow* mGlfwWindow {nullptr};
+    static std::atomic<double> mScrollValue;
 
     // OpengL
     bool mShaderValid;
@@ -61,6 +63,7 @@ private:
 
     GLint mMVPMatLocation;
     GLint mMouseLocation;
+    GLint mMouseScrollLocation;
     GLint mTimerLocation;
     GLint mResolutionLocation;
     GLint mTextureResLocation;
@@ -81,6 +84,7 @@ private:
     void settings();
 
     static void glMsgCallback(GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar*, const void*);
+    static void scrollCallback(GLFWwindow*, double, double);
 
     void prepareFBO();
     void prepareGeometry();

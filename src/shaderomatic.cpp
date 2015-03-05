@@ -98,6 +98,13 @@ void shaderomatic::glMsgCallback(GLenum source, GLenum type, GLuint id, GLenum s
 }
 
 /*************/
+std::atomic<double> shaderomatic::mScrollValue {0.0};
+void shaderomatic::scrollCallback(GLFWwindow* win, double x, double y)
+{
+    mScrollValue = mScrollValue + y;
+}
+
+/*************/
 void shaderomatic::init()
 {
     // On prépare OpenGL
@@ -124,65 +131,69 @@ void shaderomatic::init()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
+    // Scroll callback
+    glfwSetScrollCallback(mGlfwWindow, shaderomatic::scrollCallback);
+
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
-    // On récupère les heures de modifs des shaders
+    // Init shaders
     shaderChanged();
 
-    // Préparation de la géométrie (un plan ...) et de la texture
+    // Setup geometry (a plane!)
     prepareGeometry();
     prepareTexture();
 
-    // et quelques infos
     glfwGetWindowSize(mGlfwWindow, &mWindowWidth, &mWindowHeight);
     glViewport(0, 0, mWindowWidth, mWindowHeight);
 
-    // Préparation du FBO, pour faire le rendu en 2 passes
-    // A faire après le chargement de la texture, pour des histoires de résolution
+    // Setup FBO
     prepareFBO();
 
-    // Compilation du shader
+    // Shader compilation
     mShaderValid = compileShader();
 
-    // On récupère le temps courant
     mClockStart = steady_clock::now();
-
-    // Initialisation du timer pour connaître le temps par frame
     steady_clock::time_point lTimerFPS;
 
-    // Boucle principale
+    // Main loop
     mIsRunning = true;
     while(mIsRunning)
     {
         glfwPollEvents();
-
-        // Début du rendu de la frame
         lTimerFPS = steady_clock::now();
 
-        // On vérifie que la taille de la fenêtre n'a pas changé
         int lWidth, lHeight;
         glfwGetWindowSize(mGlfwWindow, &lWidth, &lHeight);
         if(lWidth != mWindowWidth || lHeight != mWindowHeight)
         {
            mWindowWidth = lWidth;
            mWindowHeight = lHeight;
-
-           // On adapte la taille du viewport opengl
            glViewport(0, 0, lWidth, lHeight);
 
-           // On change la taille du hud
            mHUD = cv::Mat::zeros(32, lWidth, CV_8UC3);
            prepareHUDTexture();
 
-           // On change la taille du FBO
            glBindTexture(GL_TEXTURE_2D, mFBOTexture);
            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
         }
 
         draw();
+        static bool isWPressed = false;
         if(glfwGetKey(mGlfwWindow, GLFW_KEY_ESCAPE))
         {
             mIsRunning = false;
+        }
+        else if (int state = glfwGetKey(mGlfwWindow, GLFW_KEY_W))
+        {
+            if (state == GLFW_PRESS && !isWPressed)
+            {
+                mWireframe = !mWireframe;
+                isWPressed = true;
+            }
+        }
+        else
+        {
+            isWPressed = false;
         }
 
         mTimePerFrame = duration<float>((steady_clock::now() - lTimerFPS)).count();
@@ -468,6 +479,7 @@ bool shaderomatic::compileShader()
 
     // Position de la souris, matrice de transformation, timer, résolution, et passe ...
     mMouseLocation = glGetUniformLocation(mShaderProgram, "vMouse");
+    mMouseScrollLocation = glGetUniformLocation(mShaderProgram, "vMouseScroll");
     mMVPMatLocation = glGetUniformLocation(mShaderProgram, "vMVP");
     mTimerLocation = glGetUniformLocation(mShaderProgram, "vTimer");
     mResolutionLocation = glGetUniformLocation(mShaderProgram, "vResolution");
@@ -517,6 +529,10 @@ void shaderomatic::draw()
         lMouse[1] = (float)mWindowHeight-1.f - max(0.f, min((float)mWindowHeight-1.f, (float)lMouseY));
         glUniform2fv(mMouseLocation, 1, (GLfloat*)lMouse);
 
+        // Mouse scroll
+        float scroll = mScrollValue;
+        glUniform1f(mMouseScrollLocation, scroll);
+
         // Timer
         duration<float> lTimer = steady_clock::now() - mClockStart;
         glUniform1f(mTimerLocation, (float)lTimer.count());
@@ -539,7 +555,7 @@ void shaderomatic::draw()
         if (mWireframe)
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glLineWidth(2);
+            glLineWidth(1);
             glEnable(GL_LINE_SMOOTH);
         }
         glUniform1i(mPassLocation, (GLint)0);
@@ -557,6 +573,9 @@ void shaderomatic::draw()
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        if (mWireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
         // Second pass to back buffer
         glUniform1i(mPassLocation, (GLint)1);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -571,9 +590,6 @@ void shaderomatic::draw()
             glDrawArrays(GL_PATCHES, 0, 6);
         else
             glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        if (mWireframe)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glfwSwapBuffers(mGlfwWindow);
     }
