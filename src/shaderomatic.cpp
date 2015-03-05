@@ -6,6 +6,9 @@
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "meshLoader.h"
+
+using namespace std;
 using namespace boost::chrono;
 
 char gDefaultVertShader[] =
@@ -140,7 +143,10 @@ void shaderomatic::init()
     shaderChanged();
 
     // Setup geometry (a plane!)
-    prepareGeometry();
+    if (!prepareScreenGeometry())
+        return;
+    if (!prepareObjectGeometry())
+        return;
     prepareTexture();
 
     glfwGetWindowSize(mGlfwWindow, &mWindowWidth, &mWindowHeight);
@@ -166,15 +172,17 @@ void shaderomatic::init()
         glfwGetWindowSize(mGlfwWindow, &lWidth, &lHeight);
         if(lWidth != mWindowWidth || lHeight != mWindowHeight)
         {
-           mWindowWidth = lWidth;
-           mWindowHeight = lHeight;
-           glViewport(0, 0, lWidth, lHeight);
+            mWindowWidth = lWidth;
+            mWindowHeight = lHeight;
+            glViewport(0, 0, lWidth, lHeight);
 
-           mHUD = cv::Mat::zeros(32, lWidth, CV_8UC3);
-           prepareHUDTexture();
+            mHUD = cv::Mat::zeros(32, lWidth, CV_8UC3);
+            prepareHUDTexture();
 
-           glBindTexture(GL_TEXTURE_2D, mFBOTexture);
-           glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glBindTexture(GL_TEXTURE_2D, mFBODepthTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, lWidth, lHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         }
 
         draw();
@@ -214,12 +222,6 @@ void shaderomatic::settings()
 }
 
 /*************/
-void shaderomatic::setImageFile(char* pFile)
-{
-    mImageFile = pFile;
-}
-
-/*************/
 void shaderomatic::setShaderFile(const char* pFileBasename)
 {
     mVertexFile = pFileBasename;
@@ -252,9 +254,8 @@ void shaderomatic::setSwapInterval(int pSwap)
 }
 
 /********************************/
-void shaderomatic::prepareGeometry()
+bool shaderomatic::prepareScreenGeometry()
 {
-    // Géométrie de l'arrière-plan
     GLfloat lPoints[] = {-1.f, -1.f, 0.f, 1.f,
                          -1.f, 1.f, 0.f, 1.f,
                          1.f, 1.f, 0.f, 1.f,
@@ -269,21 +270,112 @@ void shaderomatic::prepareGeometry()
                       1.f, 0.f,
                       0.f, 0.f};
 
-    glGenVertexArrays(1, &mVertexArray);
-    glBindVertexArray(mVertexArray);
+    glGenVertexArrays(1, &mScreenVertexArray);
+    glBindVertexArray(mScreenVertexArray);
 
-    // Coordonnées des vertices
-    glGenBuffers(2, mVertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer[0]);
+    glGenBuffers(2, mScreenVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, mScreenVertexBuffer[0]);
     glBufferData(GL_ARRAY_BUFFER, 6*4*sizeof(float), lPoints, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-    // Coordonnées de texture
-    glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, mScreenVertexBuffer[1]);
     glBufferData(GL_ARRAY_BUFFER, 6*2*sizeof(float), lTex, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
+
+    return true;
+}
+
+/********************************/
+bool shaderomatic::prepareObjectGeometry()
+{
+    if (mObjectFile != "")
+    {
+        Loader::Obj loader;
+        if (!loader.load(mObjectFile))
+        {
+            cout << "Unable to load object file " << mObjectFile << endl;
+            return false;
+        }
+
+        vector<glm::vec4> vertices = loader.getVertices();
+        vector<glm::vec2> texCoords = loader.getUVs();
+
+        vector<float> verticesBuffer;
+        vector<float> texCoordsBuffer;
+
+        for (auto& v : vertices)
+        {
+            verticesBuffer.push_back(v[0]);
+            verticesBuffer.push_back(v[1]);
+            verticesBuffer.push_back(v[2]);
+            verticesBuffer.push_back(v[3]);
+        }
+
+        for (auto& t : texCoords)
+        {
+            texCoordsBuffer.push_back(t[0]);
+            texCoordsBuffer.push_back(t[1]);
+        }
+
+        mObjectVertexNumber = verticesBuffer.size() / 4;
+
+        glGenVertexArrays(1, &mObjectVertexArray);
+        glBindVertexArray(mObjectVertexArray);
+
+        glGenBuffers(2, mObjectVertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, mObjectVertexBuffer[0]);
+        glBufferData(GL_ARRAY_BUFFER, verticesBuffer.size() * sizeof(float), verticesBuffer.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mObjectVertexBuffer[1]);
+        glBufferData(GL_ARRAY_BUFFER, texCoordsBuffer.size() * sizeof(float), texCoordsBuffer.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        cout << "Object file " << mObjectFile << " successfully loader." << endl;
+    }
+    else
+    {
+        cout << "Loading default model: a plane." << endl;
+
+        GLfloat lPoints[] = {-1.f, -1.f, 0.f, 1.f,
+                             -1.f, 1.f, 0.f, 1.f,
+                             1.f, 1.f, 0.f, 1.f,
+                             1.f, 1.f, 0.f, 1.f,
+                             1.f, -1.f, 0.f, 1.f,
+                             -1.f, -1.f, 0.f, 1.f};
+
+        GLfloat lTex[] = {0.f, 0.f,
+                          0.f, 1.f,
+                          1.f, 1.f,
+                          1.f, 1.f,
+                          1.f, 0.f,
+                          0.f, 0.f};
+
+        mObjectVertexNumber = 6;
+
+        glGenVertexArrays(1, &mObjectVertexArray);
+        glBindVertexArray(mObjectVertexArray);
+
+        glGenBuffers(2, mObjectVertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, mObjectVertexBuffer[0]);
+        glBufferData(GL_ARRAY_BUFFER, 6*4*sizeof(float), lPoints, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mObjectVertexBuffer[1]);
+        glBufferData(GL_ARRAY_BUFFER, 6*2*sizeof(float), lTex, GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(1);
+    }
+
+    return true;
 }
 
 /********************************/
@@ -302,6 +394,16 @@ void shaderomatic::prepareFBO()
 {
     glGenFramebuffers(1, &mFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+
+    // Depth buffer
+    glGenTextures(1, &mFBODepthTexture);
+    glBindTexture(GL_TEXTURE_2D, mFBODepthTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, mWindowWidth, mWindowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mFBODepthTexture, 0);
 
     // Texture as a color buffer
     glGenTextures(1, &mFBOTexture);
@@ -562,17 +664,25 @@ void shaderomatic::draw()
         GLenum lFBOBuf[] = {GL_COLOR_ATTACHMENT0};
         glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
         glDrawBuffers(1, lFBOBuf);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        glBindVertexArray(mObjectVertexArray);
         if (mTessellate)
-            glDrawArrays(GL_PATCHES, 0, 6);
+        {
+            glDrawArrays(GL_PATCHES, 0, mObjectVertexNumber);
+        }
         else
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawArrays(GL_TRIANGLES, 0, mObjectVertexNumber);
+        glBindVertexArray(0);
 
         glBindTexture(GL_TEXTURE_2D, mFBOTexture);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        glDisable(GL_DEPTH_TEST);
         if (mWireframe)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -586,10 +696,13 @@ void shaderomatic::draw()
 
         glDrawBuffers(1, lBackbuffer);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glBindVertexArray(mScreenVertexArray);
         if (mTessellate)
             glDrawArrays(GL_PATCHES, 0, 6);
         else
             glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(mGlfwWindow);
     }
