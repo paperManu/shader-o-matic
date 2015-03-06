@@ -17,61 +17,92 @@
  * along with blobserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <string>
 
 #include "shaderomatic.h"
-#include "glib.h"
-
-static gchar* gFilename = NULL;
-static gchar* gObjFilename = NULL;
-static gchar* gShadername = NULL;
-static gchar* gResolution = NULL;
-static gint gSwapInterval = 1;
-static gboolean gWireframe = FALSE;
-
-static GOptionEntry gEntries[] =
-{
-    {"image", 'i', 0, G_OPTION_ARG_STRING, &gFilename, "Specifies the image to use as texture.", NULL},
-    {"obj", 'o', 0, G_OPTION_ARG_STRING, &gObjFilename, "Specifies the object to load.", NULL},
-    {"shader", 's', 0, G_OPTION_ARG_STRING, &gShadername, "Specifies the base name of the shader files (without extension).", NULL},
-    {"res", 'r', 0, G_OPTION_ARG_STRING, &gResolution, "Specifies the startup resolution (defaults to 640x480).", NULL},
-    {"swap", 0, 0, G_OPTION_ARG_INT, &gSwapInterval, "Specifies the frame swap interval.", NULL},
-    {"wireframe", 'w', 0, G_OPTION_ARG_NONE, &gWireframe, "Draw objects as wireframe.", NULL},
-    {NULL}
-};
 
 using namespace std;
 
+string gFilename {};
+string gObjFilename {};
+string gShadername {};
+string gResolution {};
+int gSwapInterval {1};
+bool gWireframe {false};
+
+/*************/
+void parseArgs(int argc, char** argv)
+{
+    for (unsigned int i = 1; i < argc;)
+    {
+        if ((string(argv[i]) == "--image" || string(argv[i]) == "-i") && i < argc - 1)
+        {
+            ++i;
+            gFilename = string(argv[i]);
+        }
+        else if ((string(argv[i]) == "--obj" || string(argv[i]) == "-o") && i < argc - 1)
+        {
+            ++i;
+            gObjFilename = string(argv[i]);
+        }
+        else if ((string(argv[i]) == "--shader" || string(argv[i]) == "-s") && i < argc - 1)
+        {
+            ++i;
+            gShadername = string(argv[i]);
+        }
+        else if ((string(argv[i]) == "--res" || string(argv[i]) == "-r") && i < argc - 1)
+        {
+            ++i;
+            gResolution = string(argv[i]);
+        }
+        else if (string(argv[i]) == "--swap" && i < argc - 1)
+        {
+            ++i;
+            gSwapInterval = stoi(string(argv[i]));
+        }
+        else if (string(argv[i]) == "--wireframe" || string(argv[i]) == "-w")
+        {
+            gWireframe = true;
+        }
+        else if (string(argv[i]) == "--help" || string(argv[i]) == "-h")
+        {
+            cout << "Shader-0-matic, a shader testing tool" << endl;
+            cout << endl;
+            cout << "Usage:" << endl;
+            cout << "-i, --image     \t Specifies the image to use as texture" << endl;
+            cout << "-o, --object    \t Specifies the object to load" << endl;
+            cout << "-s, --shader    \t Specifies the base name of the shader files (without extension)" << endl;
+            cout << "-r, --res       \t Specifies the startup resolution (defaults to 640x480)" << endl;
+            cout << "--swap          \t Specifies the frame swap interval" << endl;
+            cout << "-w, --wireframe \t Draw objects as wireframe" << endl;
+        }
+        ++i;
+    }
+}
+
+/*************/
 int main(int argc, char** argv)
 {
     shaderomatic app;
 
     // Parsing the args
-    GError* error = NULL;
-    GOptionContext* context;
+    parseArgs(argc, argv);
 
-    context = g_option_context_new("shader-O-matic, the long waited fragment shader display machine!");
-    g_option_context_add_main_entries(context, gEntries, NULL);
-    if  (!g_option_context_parse(context, &argc, &argv, &error))
-    {
-        std::cout << "There were some errors while parsing arguments. How is that possible?" << std::endl;
-        return 1;
-    }
-
-    if (gFilename != NULL)
-        app.setImageFile(string(gFilename));
-    if (gObjFilename != NULL)
-        app.setObjectFile(string(gObjFilename));
-    if (gShadername != NULL)
+    if (gFilename != "")
+        app.setImageFile(gFilename);
+    if (gObjFilename != "")
+        app.setObjectFile(gObjFilename);
+    if (gShadername != "")
         app.setShaderFile(gShadername);
-    if (gResolution != NULL)
+    if (gResolution != "")
     {
         int w, h;
         w = h = 0;
-        sscanf(gResolution, "%ix%i", &w, &h);
+        sscanf(gResolution.c_str(), "%ix%i", &w, &h);
         app.setResolution(w, h);
     }
-    if (gWireframe == TRUE)
+    if (gWireframe == true)
     {
         app.setWireframe(true);
     }

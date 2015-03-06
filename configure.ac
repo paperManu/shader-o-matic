@@ -34,12 +34,6 @@ if test "x${have_gl}" = "xfalse" ; then
     AC_MSG_ERROR([Missing opengl])
 fi
 
-# GLib
-PKG_CHECK_MODULES([GLIB], glib-2.0, have_glib=true, have_glib=false)
-if test "x${have_glib}" = "xfalse" ; then
-    AC_MSG_ERROR([Missing glib])
-fi
-
 BOOST_REQUIRE([1.48])
 BOOST_SYSTEM
 BOOST_FILESYSTEM

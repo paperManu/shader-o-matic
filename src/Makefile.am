@@ -14,8 +14,7 @@ shaderomatic_CXXFLAGS = \
     $(GLFW_CFLAGS) \
 	$(OPENCV_CFLAGS) \
 	$(GL_CFLAGS) \
-	$(BOOST_CPPFLAGS) \
-	$(GLIB_CFLAGS)
+	$(BOOST_CPPFLAGS)
 
 shaderomatic_LDADD = \
     $(GLFW_LIBS) \
@@ -23,5 +22,4 @@ shaderomatic_LDADD = \
 	$(GL_LIBS) \
 	$(BOOST_SYSTEM_LIBS) \
 	$(BOOST_FILESYSTEM_LIBS) \
-	$(BOOST_CHRONO_LIBS) \
-	$(GLIB_LIBS)
+	$(BOOST_CHRONO_LIBS)

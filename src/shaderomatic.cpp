@@ -222,21 +222,21 @@ void shaderomatic::settings()
 }
 
 /*************/
-void shaderomatic::setShaderFile(const char* pFileBasename)
+void shaderomatic::setShaderFile(string file)
 {
-    mVertexFile = pFileBasename;
+    mVertexFile = file;
     mVertexFile += ".vert";
 
-    mTessControlFile = pFileBasename;
+    mTessControlFile = file;
     mTessControlFile += ".tcs";
     
-    mTessEvalFile = pFileBasename;
+    mTessEvalFile = file;
     mTessEvalFile += ".tes";
 
-    mGeometryFile = pFileBasename;
+    mGeometryFile = file;
     mGeometryFile += ".geom";
 
-    mFragmentFile = pFileBasename;
+    mFragmentFile = file;
     mFragmentFile += ".frag";
 }
 
@@ -667,7 +667,18 @@ void shaderomatic::draw()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+        if (mCullFace == 0)
+            glDisable(GL_CULL_FACE);
+        else if (mCullFace == 1)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+        }
+        else
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
 
         glBindVertexArray(mObjectVertexArray);
         if (mTessellate)

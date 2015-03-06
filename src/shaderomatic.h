@@ -38,16 +38,18 @@ public:
     shaderomatic();
     void setImageFile(std::string file) {mImageFile = file;}
     void setObjectFile(std::string file) {mObjectFile = file;}
-    void setShaderFile(const char* pFileBasename);
+    void setShaderFile(std::string file);
     void setResolution(const int pWidth, const int pHeight);
     void setSwapInterval(int pSwap);
     void setWireframe(bool wire) {mWireframe = wire;}
+    void setCull(int value) {mCullFace = value;}
     void init();
 
 private:
     /***********/
     // Attributes
-    int mSwapInterval;
+    int mSwapInterval {0};
+    int mCullFace {0};
     std::string mImageFile {""};
     std::string mObjectFile {""};
     std::string mVertexFile, mTessControlFile, mTessEvalFile, mGeometryFile, mFragmentFile;
