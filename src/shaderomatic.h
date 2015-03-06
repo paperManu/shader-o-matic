@@ -42,7 +42,7 @@ public:
     void setResolution(const int pWidth, const int pHeight);
     void setSwapInterval(int pSwap);
     void setWireframe(bool wire) {mWireframe = wire;}
-    void setCull(int value) {mCullFace = value;}
+    void setCulling(int value) {mCullFace = value;}
     void init();
 
 private:

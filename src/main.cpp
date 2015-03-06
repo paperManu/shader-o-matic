@@ -29,6 +29,7 @@ string gObjFilename {};
 string gShadername {};
 string gResolution {};
 int gSwapInterval {1};
+int gCullFace {0};
 bool gWireframe {false};
 
 /*************/
@@ -61,6 +62,11 @@ void parseArgs(int argc, char** argv)
             ++i;
             gSwapInterval = stoi(string(argv[i]));
         }
+        else if (string(argv[i]) == "--cull" && i < argc - 1)
+        {
+            ++i;
+            gCullFace = stoi(string(argv[i]));
+        }
         else if (string(argv[i]) == "--wireframe" || string(argv[i]) == "-w")
         {
             gWireframe = true;
@@ -75,6 +81,7 @@ void parseArgs(int argc, char** argv)
             cout << "-s, --shader    \t Specifies the base name of the shader files (without extension)" << endl;
             cout << "-r, --res       \t Specifies the startup resolution (defaults to 640x480)" << endl;
             cout << "--swap          \t Specifies the frame swap interval" << endl;
+            cout << "--cull          \t Specifies culling mode: 0 for no culling, 1 for front, 2 for back" << endl;
             cout << "-w, --wireframe \t Draw objects as wireframe" << endl;
         }
         ++i;
@@ -107,6 +114,7 @@ int main(int argc, char** argv)
         app.setWireframe(true);
     }
     app.setSwapInterval(gSwapInterval);
+    app.setCulling(gCullFace);
 
     app.init();
 
