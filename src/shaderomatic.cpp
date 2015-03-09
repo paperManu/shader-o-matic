@@ -179,7 +179,9 @@ void shaderomatic::init()
             mHUD = cv::Mat::zeros(32, lWidth, CV_8UC3);
             prepareHUDTexture();
 
-            glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+            glBindTexture(GL_TEXTURE_2D, mFBOTexture[0]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glBindTexture(GL_TEXTURE_2D, mFBOTexture[1]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lWidth, lHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
             glBindTexture(GL_TEXTURE_2D, mFBODepthTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, lWidth, lHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -406,20 +408,23 @@ void shaderomatic::prepareFBO()
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mFBODepthTexture, 0);
 
     // Texture as a color buffer
-    glGenTextures(1, &mFBOTexture);
-    glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+    glGenTextures(2, mFBOTexture);
+    for (int i = 0; i < 2; ++i)
+    {
+        glBindTexture(GL_TEXTURE_2D, mFBOTexture[i]);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWindowWidth, mWindowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWindowWidth, mWindowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mFBOTexture, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, mFBOTexture[i], 0);
+    }
 
     GLenum lFBOStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(lFBOStatus != GL_FRAMEBUFFER_COMPLETE)
@@ -573,11 +578,16 @@ bool shaderomatic::compileShader()
     mHUDLocation = glGetUniformLocation(mShaderProgram, "vHUDMap");
     glUniform1i(mHUDLocation, 1);
 
-    // Ainsi que de la texture liée au FBO
+    // Ainsi que des texture liée au FBO
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+    glBindTexture(GL_TEXTURE_2D, mFBOTexture[0]);
     lTextureUniform = glGetUniformLocation(mShaderProgram, "vFBOMap");
     glUniform1i(lTextureUniform, 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, mFBOTexture[1]);
+    lTextureUniform = glGetUniformLocation(mShaderProgram, "vFBOMap2");
+    glUniform1i(lTextureUniform, 3);
 
     // Position de la souris, matrice de transformation, timer, résolution, et passe ...
     mMouseLocation = glGetUniformLocation(mShaderProgram, "vMouse");
@@ -661,9 +671,9 @@ void shaderomatic::draw()
             glEnable(GL_LINE_SMOOTH);
         }
         glUniform1i(mPassLocation, (GLint)0);
-        GLenum lFBOBuf[] = {GL_COLOR_ATTACHMENT0};
+        GLenum lFBOBuf[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
         glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
-        glDrawBuffers(1, lFBOBuf);
+        glDrawBuffers(2, lFBOBuf);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
@@ -689,7 +699,9 @@ void shaderomatic::draw()
             glDrawArrays(GL_TRIANGLES, 0, mObjectVertexNumber);
         glBindVertexArray(0);
 
-        glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+        glBindTexture(GL_TEXTURE_2D, mFBOTexture[0]);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, mFBOTexture[1]);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -703,7 +715,9 @@ void shaderomatic::draw()
         GLenum lBackbuffer[] = {GL_BACK};
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, mFBOTexture);
+        glBindTexture(GL_TEXTURE_2D, mFBOTexture[0]);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, mFBOTexture[1]);
 
         glDrawBuffers(1, lBackbuffer);
         glClear(GL_COLOR_BUFFER_BIT);

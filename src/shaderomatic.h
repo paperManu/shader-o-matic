@@ -104,7 +104,7 @@ private:
     std::time_t mImageChange;
 
     GLuint mFBO;
-    GLuint mFBOTexture;
+    GLuint mFBOTexture[2];
     GLuint mFBODepthTexture;
 
     // Methods
