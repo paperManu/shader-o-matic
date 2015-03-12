@@ -83,6 +83,7 @@ void parseArgs(int argc, char** argv)
             cout << "--swap          \t Specifies the frame swap interval" << endl;
             cout << "--cull          \t Specifies culling mode: 0 for no culling, 1 for front, 2 for back" << endl;
             cout << "-w, --wireframe \t Draw objects as wireframe" << endl;
+            exit(0);
         }
         ++i;
     }
