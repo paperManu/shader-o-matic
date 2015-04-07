@@ -1,0 +1,23 @@
+Shader-O-matic
+==============
+
+About
+-----
+A small tool to test and develop quickly shaders (vertex, tessellation, geometry and fragment).
+
+Authors
+-------
+* Emmanuel Durand <emmanueldurand@gmail.com>
+
+Project URL
+-----------
+https://github.com/paperManu/shader-o-matic
+
+Installation notes
+------------------
+Quick walkthrough for installation on Ubuntu 14.04 and up:
+    sudo apt-add-repository ppa:pyglfw/pyglfw
+    sudo apt-get install libglfw3
+    sudo apt-get install libopencv-dev
+    ./autogen.sh && ./configure
+    make && sudo make install
