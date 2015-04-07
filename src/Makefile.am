@@ -8,7 +8,8 @@ shaderomatic_SOURCES = \
 	shaderomatic.cpp
 
 noinst_HEADERS = \
-	shaderomatic.h
+	shaderomatic.h \
+	meshLoader.h
 
 shaderomatic_CXXFLAGS = \
     $(GLFW_CFLAGS) \
