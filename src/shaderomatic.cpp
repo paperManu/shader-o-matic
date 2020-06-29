@@ -41,7 +41,7 @@ char gDefaultFragShader[] =
     "uniform vec2 vResolution;\n"
     "uniform int vPass;\n"
     "\n"
-    "in vec2 finalTexCoord;\n"
+    "smooth in vec2 finalTexCoord;\n"
     "\n"
     "out vec4 fragColor;\n"
     "\n"

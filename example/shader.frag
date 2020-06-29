@@ -9,7 +9,7 @@ uniform float vTimer;
 uniform vec2 vResolution;
 uniform int vPass;
 
-in vec2 finalTexCoord;
+smooth in vec2 finalTexCoord;
 
 out vec4 fragColor;
 
@@ -81,4 +81,6 @@ void main(void)
         float lHUDScale = vResolution.y/32.f;
         fragColor += texture(vHUDMap, vec2(finalTexCoord.s, finalTexCoord.t*lHUDScale));
     }
+
+    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

@@ -23,13 +23,13 @@ if test "x${have_glfw}" = "xfalse" ; then
 fi
 
 # OpenCV
-PKG_CHECK_MODULES([OPENCV], [opencv >= 2.3])
+PKG_CHECK_MODULES([OPENCV], [opencv4 >= 4.0])
 if test "x${have_opencv}" = "xfalse" ; then
     AC_MSG_ERROR([Missing opencv])
 fi
 
 # OpenGL
-PKG_CHECK_MODULES([GL], [gl >= 2.3])
+PKG_CHECK_MODULES([GL], [opengl >= 2.3])
 if test "x${have_gl}" = "xfalse" ; then
     AC_MSG_ERROR([Missing opengl])
 fi
